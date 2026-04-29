@@ -1,4 +1,4 @@
-# 🏥 MedAgent — Medical Document Intelligence System
+# MedAgent — Medical Document Intelligence System
 
 > Upload a medical lab report PDF → get plain-language explanations, severity classifications, doctor questions, action plan, and real-world agent actions (Google Calendar, Gmail, Slack).
 
