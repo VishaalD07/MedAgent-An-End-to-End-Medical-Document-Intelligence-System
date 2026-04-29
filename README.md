@@ -94,7 +94,7 @@ Real-world tool integrations triggered directly from NLP outputs:
 ## Project Structure
 
 ```
-medagent-nlp/
+MedAgent-An-End-to-End-Medical-Document-Intelligence-System/
 ├── DLNLP.ipynb              # Full pipeline notebook (Modules 00-05)
 ├── report/
 │   └── DLNLP.pdf            # ACL-style project report (7 pages)
