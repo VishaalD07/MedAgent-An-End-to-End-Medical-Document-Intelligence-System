@@ -44,21 +44,21 @@ Patient-ready report + real-world actions
 
 ## Features
 
-### 🔬 Module 02 — Medical NER
+### Module 02 — Medical NER
 - Fine-tuned `dmis-lab/biobert-base-cased-v1.2` on BC5CDR corpus
 - Extracts **Chemical** entities (drugs, compounds) and **Disease** entities
 - WordPiece subword tokenization with label alignment (`-100` for continuation subwords)
 - Trained for 4 epochs on NVIDIA A100, ~10 minutes
 - F1 = 87.01% on BC5CDR test set (5,865 sentences)
 
-### 🧪 Module 03 — Lab Value Parser
+### Module 03 — Lab Value Parser
 - Parses 18 test types: Hemoglobin, HbA1c, eGFR, LDL, Glucose, Creatinine, etc.
 - Three severity levels: **Normal**, **Borderline**, **Critical**
 - Handles one-sided ranges (eGFR ≥ 60), upper-bound ranges (LDL < 100), two-sided ranges
 - Dedicated HbA1c extractor for reliable parsing
 - 100% accuracy on all unit tests and health check assertions
 
-### 📝 Module 04 — Text Simplification
+### Module 04 — Text Simplification
 - 4-step prompt chain using Groq Llama-3.3-70B (temperature=0.3)
   1. Plain-language explanation per finding (PLAIN + IMPACT)
   2. 3-4 sentence overall health summary
@@ -67,15 +67,15 @@ Patient-ready report + real-world actions
 - +6.6 Flesch-Kincaid grade improvement on MedQuAD samples
 - Target reading level: Grade 8
 
-### 🤖 Module 05 — MCP Agent
+### Module 05 — MCP Agent
 Real-world tool integrations triggered directly from NLP outputs:
 
 | Tool | Integration | What it does |
 |------|-------------|--------------|
-| 📅 Google Calendar | Google Calendar API v3 | Creates daily medication reminders + follow-up appointment |
-| 📧 Gmail | Gmail API | Sends patient-friendly lab summary email |
-| 💬 Slack | Incoming Webhook | Posts morning health nudge with medication reminders |
-| 💊 Drug Interactions | DrugBank + curated pairs | Checks interactions between detected medications |
+| Google Calendar | Google Calendar API v3 | Creates daily medication reminders + follow-up appointment |
+| Gmail | Gmail API | Sends patient-friendly lab summary email |
+| Slack | Incoming Webhook | Posts morning health nudge with medication reminders |
+| Drug Interactions | DrugBank + curated pairs | Checks interactions between detected medications |
 
 ---
 
