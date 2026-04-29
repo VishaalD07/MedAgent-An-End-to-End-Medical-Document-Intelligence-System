@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedAgent — Medical Report Intelligence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0a0f14;
+    --surface:    #111820;
+    --surface2:   #182028;
+    --border:     #1e2d3d;
+    --border2:    #253545;
+    --text:       #e8eef4;
+    --text-dim:   #7a9ab5;
+    --text-faint: #3d5a72;
+    --accent:     #00d4ff;
+    --accent-dim: #0099bb;
+    --critical:   #ff4757;
+    --borderline: #ffa502;
+    --normal:     #2ed573;
+    --crit-bg:    rgba(255,71,87,0.08);
+    --crit-border:rgba(255,71,87,0.25);
+    --warn-bg:    rgba(255,165,2,0.08);
+    --warn-border:rgba(255,165,2,0.25);
+    --ok-bg:      rgba(46,213,115,0.08);
+    --ok-border:  rgba(46,213,115,0.25);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-mark {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px; font-weight: 500;
+    color: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .header-tag {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 64px 0 48px;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero p {
+    font-size: 17px;
+    color: var(--text-dim);
+    max-width: 480px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: 16px;
+    padding: 56px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.03);
+  }
+
+  .upload-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 16px;
+    background: var(--surface2);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border2);
+  }
+
+  .upload-icon svg { width: 24px; height: 24px; color: var(--accent); }
+
+  .upload-zone h3 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .upload-zone p {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+  }
+
+  .file-selected {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--ok-bg);
+    border: 1px solid var(--ok-border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  .file-selected svg { color: var(--normal); flex-shrink: 0; }
+  .file-name { font-size: 14px; font-weight: 500; }
+  .file-size { font-size: 12px; color: var(--text-dim); }
+
+  /* Analyze button */
+  .btn-analyze {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-analyze:hover { background: #00eeff; transform: translateY(-1px); }
+  .btn-analyze:active { transform: translateY(0); }
+  .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 64px 0;
+  }
+
+  .loading-ring {
+    width: 56px; height: 56px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    margin: 0 auto 24px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-steps { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+  .loading-step {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; color: var(--text-dim);
+    transition: color 0.3s;
+  }
+
+  .loading-step.active { color: var(--text); }
+  .loading-step.done   { color: var(--normal); }
+
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border2);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .loading-step.active .step-dot { background: var(--accent); animation: pulse 1s infinite; }
+  .loading-step.done   .step-dot { background: var(--normal); }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* Results */
+  .results { padding: 48px 0; animation: fadeUp 0.4s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 16px;
+  }
+
+  /* Summary card */
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .summary-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .summary-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 14px;
+  }
+
+  .summary-text {
+    color: var(--text-dim);
+    line-height: 1.75;
+    font-size: 15px;
+    font-weight: 300;
+  }
+
+  /* Lab findings grid */
+  .findings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .finding-card {
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .finding-card:hover { transform: translateY(-2px); }
+
+  .finding-card.Critical  { background: var(--crit-bg); border-color: var(--crit-border); }
+  .finding-card.Borderline{ background: var(--warn-bg); border-color: var(--warn-border); }
+  .finding-card.Normal    { background: var(--ok-bg);   border-color: var(--ok-border);   }
+
+  .finding-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .finding-name {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .severity-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+  }
+
+  .severity-badge.Critical   { background: rgba(255,71,87,0.2);   color: var(--critical);   }
+  .severity-badge.Borderline { background: rgba(255,165,2,0.2);   color: var(--borderline); }
+  .severity-badge.Normal     { background: rgba(46,213,115,0.2);  color: var(--normal);     }
+
+  .finding-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .finding-value.Critical   { color: var(--critical);   }
+  .finding-value.Borderline { color: var(--borderline); }
+  .finding-value.Normal     { color: var(--normal);     }
+
+  .finding-unit { font-size: 12px; color: var(--text-faint); margin-bottom: 12px; }
+  .finding-ref  { font-size: 12px; color: var(--text-faint); margin-bottom: 10px; }
+  .finding-ref span { color: var(--text-dim); }
+
+  .finding-plain {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    font-weight: 300;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+
+  /* Two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  .list-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .list-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .list-card ol { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+  .list-card li {
+    display: flex; gap: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  .list-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  /* Analyze another */
+  .btn-reset {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 48px;
+  }
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Error */
+  .error-card {
+    background: var(--crit-bg);
+    border: 1px solid var(--crit-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    color: var(--critical);
+    font-size: 14px;
+    margin-top: 16px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+
+  .stat-chip.critical   { background: var(--crit-bg); border-color: var(--crit-border); color: var(--critical);   }
+  .stat-chip.borderline { background: var(--warn-bg); border-color: var(--warn-border); color: var(--borderline); }
+  .stat-chip.normal     { background: var(--ok-bg);   border-color: var(--ok-border);   color: var(--normal);     }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-mark">M</div>
+    <div class="logo-text">Med<span>Agent</span></div>
+    <div class="header-tag">NLP COURSE PROJECT</div>
+  </header>
+
+  <!-- Upload view -->
+  <div id="view-upload">
+    <div class="hero">
+      <h1>Understand your<br><em>lab results</em></h1>
+      <p>Upload your medical PDF and get a plain-language report with actionable next steps.</p>
+    </div>
+
+    <div class="upload-zone" id="dropzone">
+      <input type="file" accept=".pdf" id="file-input" />
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <polyline points="9 15 12 12 15 15"/>
+        </svg>
+      </div>
+      <h3>Drop your lab report PDF</h3>
+      <p>or click to browse — PDF files only</p>
+    </div>
+
+    <div id="file-info" style="display:none"></div>
+    <div id="upload-error" style="display:none"></div>
+    <button class="btn-analyze" id="btn-analyze" disabled>Analyze Report</button>
+  </div>
+
+  <!-- Loading view -->
+  <div id="view-loading" style="display:none">
+    <div class="loading">
+      <div class="loading-ring"></div>
+      <p style="color:var(--text-dim);margin-bottom:28px;font-size:15px;">Analyzing your report...</p>
+      <ul class="loading-steps" id="loading-steps">
+        <li class="loading-step active" data-step="0"><span class="step-dot"></span>Extracting text from PDF</li>
+        <li class="loading-step" data-step="1"><span class="step-dot"></span>Parsing lab values</li>
+        <li class="loading-step" data-step="2"><span class="step-dot"></span>Classifying severity</li>
+        <li class="loading-step" data-step="3"><span class="step-dot"></span>Generating plain-language report</li>
+        <li class="loading-step" data-step="4"><span class="step-dot"></span>Building action plan</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Results view -->
+  <div id="view-results" style="display:none"></div>
+
+</div>
+
+<footer>
+  <div class="container">
+    MedAgent · Modules 01-05 · BioBERT NER (F1=87%) · Groq Llama 3.3 70B · MCP Agent
+  </div>
+</footer>
+
+<script>
+const API_URL = 'http://localhost:8000';
+
+let selectedFile = null;
+
+// File input
+const fileInput  = document.getElementById('file-input');
+const dropzone   = document.getElementById('dropzone');
+const fileInfo   = document.getElementById('file-info');
+const btnAnalyze = document.getElementById('btn-analyze');
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file || !file.name.endsWith('.pdf')) {
+    showError('Please upload a PDF file.');
+    return;
+  }
+  selectedFile = file;
+  fileInfo.style.display = 'block';
+  fileInfo.innerHTML = `
+    <div class="file-selected">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <div>
+        <div class="file-name">${file.name}</div>
+        <div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+      </div>
+    </div>`;
+  btnAnalyze.disabled = false;
+  document.getElementById('upload-error').style.display = 'none';
+}
+
+function showError(msg) {
+  const el = document.getElementById('upload-error');
+  el.style.display = 'block';
+  el.innerHTML = `<div class="error-card">${msg}</div>`;
+}
+
+// Analyze
+btnAnalyze.addEventListener('click', analyze);
+
+async function analyze() {
+  if (!selectedFile) return;
+
+  show('view-loading');
+  animateSteps();
+
+  const form = new FormData();
+  form.append('file', selectedFile);
+
+  try {
+    const res  = await fetch(`${API_URL}/analyze`, { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Analysis failed');
+    renderResults(data);
+    show('view-results');
+  } catch (err) {
+    show('view-upload');
+    showError(`Error: ${err.message}. Make sure the backend is running at ${API_URL}`);
+  }
+}
+
+function animateSteps() {
+  const steps = document.querySelectorAll('.loading-step');
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i > 0) steps[i-1].className = 'loading-step done';
+    if (i < steps.length) { steps[i].className = 'loading-step active'; i++; }
+    else clearInterval(interval);
+  }, 1200);
+}
+
+function show(id) {
+  ['view-upload','view-loading','view-results'].forEach(v => {
+    document.getElementById(v).style.display = v === id ? 'block' : 'none';
+  });
+}
+
+function sev(s) {
+  return s === 'Critical' ? 'critical' : s === 'Borderline' ? 'borderline' : 'normal';
+}
+
+function renderResults(data) {
+  const { lab_values, report } = data;
+  const { health_summary, findings, doctor_questions, action_plan } = report;
+
+  const nCrit  = lab_values.filter(l => l.severity === 'Critical').length;
+  const nWarn  = lab_values.filter(l => l.severity === 'Borderline').length;
+  const nNorm  = lab_values.filter(l => l.severity === 'Normal').length;
+
+  const findingsMap = {};
+  (findings || []).forEach(f => { findingsMap[f.test_name] = f; });
+
+  const findingsHTML = lab_values.map(lv => {
+    const f    = findingsMap[lv.test_name] || {};
+    const plain = f.plain_language || '';
+    return `
+      <div class="finding-card ${lv.severity}">
+        <div class="finding-header">
+          <div class="finding-name">${lv.test_name}</div>
+          <div class="severity-badge ${lv.severity}">${lv.severity.toUpperCase()}</div>
+        </div>
+        <div class="finding-value ${lv.severity}">${lv.value}</div>
+        <div class="finding-unit">${lv.unit}</div>
+        ${lv.ref_range ? `<div class="finding-ref">Normal: <span>${lv.ref_range}</span></div>` : ''}
+        ${lv.flag ? `<div class="finding-ref">Flag: <span>${lv.flag}</span></div>` : ''}
+        ${plain ? `<div class="finding-plain">${plain}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  const questionsHTML = (doctor_questions || []).map((q,i) =>
+    `<li><span class="list-num">${String(i+1).padStart(2,'0')}</span><span>${q}</span></li>`
+  ).join('');
+
+  const actionsHTML = (action_plan || []).map((a,i) =>
+    `<li><span class="list-num">${String(i+1).padStart(2,'0')}</span><span>${a}</span></li>`
+  ).join('');
+
+  document.getElementById('view-results').innerHTML = `
+    <div class="results">
+      <button class="btn-reset" onclick="resetApp()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Analyze another report
+      </button>
+
+      <div class="section-label">Health Overview</div>
+      <div class="summary-card">
+        <h2>Your Health Summary</h2>
+        <p class="summary-text">${health_summary || 'Summary not available.'}</p>
+      </div>
+
+      <div class="stats-bar">
+        ${nCrit  ? `<div class="stat-chip critical">  <span class="dot"></span> ${nCrit} Critical</div>` : ''}
+        ${nWarn  ? `<div class="stat-chip borderline"><span class="dot"></span> ${nWarn} Borderline</div>` : ''}
+        ${nNorm  ? `<div class="stat-chip normal">    <span class="dot"></span> ${nNorm} Normal</div>` : ''}
+      </div>
+
+      <div class="section-label">Lab Results</div>
+      <div class="findings-grid">${findingsHTML}</div>
+
+      <div class="two-col">
+        <div class="list-card">
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.59A2 2 0 012 .18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+            Questions for Your Doctor
+          </h3>
+          <ol>${questionsHTML || '<li><span class="list-num">—</span><span>Not available</span></li>'}</ol>
+        </div>
+        <div class="list-card">
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            Your Action Plan
+          </h3>
+          <ol>${actionsHTML || '<li><span class="list-num">—</span><span>Not available</span></li>'}</ol>
+        </div>
+      </div>
+    </div>`;
+}
+
+function resetApp() {
+  selectedFile = null;
+  fileInput.value = '';
+  fileInfo.style.display = 'none';
+  btnAnalyze.disabled = true;
+  document.getElementById('upload-error').style.display = 'none';
+  show('view-upload');
+  // Reset loading steps
+  document.querySelectorAll('.loading-step').forEach((s,i) => {
+    s.className = 'loading-step' + (i === 0 ? ' active' : '');
+  });
+}
+</script>
+</body>
+</html>
